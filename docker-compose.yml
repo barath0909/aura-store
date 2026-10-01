@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  # 1. Express Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aurastore-backend
+    ports:
+      - "5000:5000"
+    restart: always
+
+  # 2. React + Vite Frontend (served via Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aurastore-frontend
+    ports:
+      - "5001:80"
+    depends_on:
+      - backend
+    restart: always
