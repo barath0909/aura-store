@@ -13,16 +13,19 @@ const INDIAN_PIN_PRESETS = {
 export default function App() {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
-  const [user, setUser] = useState({ name: 'Rohan Verma', phone: '+91 98765 43210', role: 'customer' });
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMethod, setAuthMethod] = useState('phone'); // 'phone' | 'credentials'
-  const [phoneInput, setPhoneInput] = useState('');
-  const [otpInput, setOtpInput] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
   
-  // Username & Password State
-  const [usernameInput, setUsernameInput] = useState('');
-  const [passwordInput, setPasswordInput] = useState('');
+  // No default user; starts logged out
+  const [user, setUser] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Form Fields State
+  const [formData, setFormData] = useState({
+    username: '',
+    name: '',
+    email: '',
+    phone: '',
+    password: ''
+  });
   const [authError, setAuthError] = useState('');
 
   // Search & Filter
@@ -36,7 +39,7 @@ export default function App() {
   // Checkout modal
   const [showCheckout, setShowCheckout] = useState(false);
   const [paymentMode, setPaymentMode] = useState('upi');
-  const [upiId, setUpiId] = useState('rohan@okhdfcbank');
+  const [upiId, setUpiId] = useState('');
   const [orderConfirmed, setOrderConfirmed] = useState(null);
 
   // AI Assistant
@@ -138,50 +141,46 @@ export default function App() {
     setCart(prev => prev.filter(p => p.id !== id));
   };
 
-  const handleSendOtp = () => {
-    setAuthError('');
-    if (phoneInput.length !== 10) {
-      setAuthError('Please enter a valid 10-digit Indian mobile number');
-      return;
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'phone') {
+      setFormData(prev => ({ ...prev, phone: value.replace(/\D/g, '').slice(0, 10) }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
-    setOtpSent(true);
-    setOtpInput('123456');
   };
 
-  const handleVerifyOtp = () => {
-    if (otpInput !== '123456') {
-      setAuthError('Invalid OTP! Please use 123456');
-      return;
-    }
-    setUser({ name: `User +91 ${phoneInput}`, phone: `+91 ${phoneInput}`, role: 'customer' });
-    setShowAuthModal(false);
-    setOtpSent(false);
-    setPhoneInput('');
-    setOtpInput('');
-  };
-
-  const handleUsernameLogin = (e) => {
+  const handleSignIn = (e) => {
     e.preventDefault();
     setAuthError('');
 
-    const trimmedUser = usernameInput.trim();
-    if (!trimmedUser || !passwordInput) {
-      setAuthError('Please enter both username and password.');
+    if (formData.phone.length !== 10) {
+      setAuthError('Please enter a valid 10-digit mobile number');
       return;
     }
 
-    if (trimmedUser === 'admin' && passwordInput === '123') {
-      setUser({ name: 'Store Administrator', username: 'admin', role: 'admin' });
-      setShowAuthModal(false);
-      setUsernameInput('');
-      setPasswordInput('');
+    const trimmedUser = formData.username.trim();
+
+    if (trimmedUser === 'admin' && formData.password === '123') {
+      setUser({
+        name: formData.name || 'Store Administrator',
+        username: 'admin',
+        email: formData.email,
+        phone: `+91 ${formData.phone}`,
+        role: 'admin'
+      });
     } else {
-      // General customer login simulation
-      setUser({ name: trimmedUser, username: trimmedUser, role: 'customer' });
-      setShowAuthModal(false);
-      setUsernameInput('');
-      setPasswordInput('');
+      setUser({
+        name: formData.name || trimmedUser,
+        username: trimmedUser,
+        email: formData.email,
+        phone: `+91 ${formData.phone}`,
+        role: 'customer'
+      });
     }
+
+    setFormData({ username: '', name: '', email: '', phone: '', password: '' });
+    setShowAuthModal(false);
   };
 
   const handleAiConsult = async (e) => {
@@ -284,7 +283,7 @@ export default function App() {
               <div className="flex items-center gap-2 bg-slate-100 pl-3 pr-1.5 py-1.5 rounded-full border border-slate-200">
                 <div className="text-xs">
                   <div className="font-bold text-slate-800">{user.name}</div>
-                  <div className="text-[10px] text-slate-500 capitalize">{user.role}</div>
+                  <div className="text-[10px] text-slate-500 capitalize">@{user.username} • {user.role}</div>
                 </div>
                 <button
                   onClick={() => setUser(null)}
@@ -296,7 +295,7 @@ export default function App() {
             ) : (
               <button
                 onClick={() => setShowAuthModal(true)}
-                className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow-sm transition"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow-sm transition"
               >
                 Sign In
               </button>
@@ -305,10 +304,10 @@ export default function App() {
             {/* Cart Trigger */}
             <button
               onClick={() => setShowCheckout(true)}
-              className="relative bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 transition"
+              className="relative bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 transition"
             >
               <span>Cart</span>
-              <span className="bg-white text-indigo-700 font-extrabold w-5 h-5 rounded-full flex items-center justify-center text-[11px]">
+              <span className="bg-white text-slate-900 font-extrabold w-5 h-5 rounded-full flex items-center justify-center text-[11px]">
                 {cart.reduce((a, b) => a + b.quantity, 0)}
               </span>
             </button>
@@ -581,119 +580,110 @@ export default function App() {
         </div>
       )}
 
-      {/* Multi-Option Sign-In Modal */}
+      {/* Unified All-in-One Sign-In Modal */}
       {showAuthModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-sm bg-white rounded-2xl p-6 shadow-2xl">
+          <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-extrabold text-lg text-slate-900">Sign In to AuraStore</h3>
-              <button onClick={() => setShowAuthModal(false)} className="text-slate-400 hover:text-slate-600 font-bold">✕</button>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex border-b border-slate-200 mb-4">
-              <button
-                onClick={() => { setAuthMethod('phone'); setAuthError(''); }}
-                className={`flex-1 py-2 text-xs font-bold border-b-2 transition ${authMethod === 'phone' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}
+              <div>
+                <h3 className="font-extrabold text-lg text-slate-900">Sign In / Register</h3>
+                <p className="text-xs text-slate-500">Enter your details to access your account</p>
+              </div>
+              <button 
+                onClick={() => { setShowAuthModal(false); setAuthError(''); }} 
+                className="text-slate-400 hover:text-slate-600 font-bold w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center"
               >
-                Mobile OTP (+91)
-              </button>
-              <button
-                onClick={() => { setAuthMethod('credentials'); setAuthError(''); }}
-                className={`flex-1 py-2 text-xs font-bold border-b-2 transition ${authMethod === 'credentials' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}
-              >
-                Username & Password
+                ✕
               </button>
             </div>
 
             {authError && (
-              <div className="mb-3 text-[11px] bg-rose-50 text-rose-600 p-2.5 rounded-lg border border-rose-200">
+              <div className="mb-3 text-xs bg-rose-50 text-rose-600 p-2.5 rounded-lg border border-rose-200">
                 {authError}
               </div>
             )}
 
-            {authMethod === 'phone' ? (
+            <form onSubmit={handleSignIn} className="space-y-3">
               <div>
-                {!otpSent ? (
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 uppercase">Indian Mobile Number</label>
-                    <div className="flex gap-2 mt-1 mb-3">
-                      <span className="bg-slate-100 border border-slate-300 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-700 flex items-center">+91</span>
-                      <input
-                        type="tel"
-                        maxLength={10}
-                        placeholder="98765 43210"
-                        value={phoneInput}
-                        onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, ''))}
-                        className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                      />
-                    </div>
-                    <button
-                      onClick={handleSendOtp}
-                      className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs transition shadow"
-                    >
-                      Get 6-Digit OTP
-                    </button>
-                  </div>
-                ) : (
-                  <div>
-                    <label className="text-[11px] font-bold text-slate-600 uppercase">Enter 6-Digit OTP</label>
-                    <p className="text-[10px] text-slate-400 mb-2">Simulated OTP auto-filled: 123456</p>
-                    <input
-                      type="text"
-                      maxLength={6}
-                      value={otpInput}
-                      onChange={(e) => setOtpInput(e.target.value)}
-                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-center text-lg tracking-widest font-black focus:outline-none focus:ring-1 focus:ring-indigo-600 mb-3"
-                    />
-                    <button
-                      onClick={handleVerifyOtp}
-                      className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-xs transition shadow"
-                    >
-                      Verify & Sign In
-                    </button>
-                    <button
-                      onClick={() => setOtpSent(false)}
-                      className="w-full text-slate-500 text-[11px] mt-2 text-center"
-                    >
-                      Change Number
-                    </button>
-                  </div>
-                )}
+                <label className="text-[11px] font-bold text-slate-600 uppercase">Username *</label>
+                <input
+                  type="text"
+                  name="username"
+                  required
+                  placeholder="e.g. rohan_verma or admin"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                />
               </div>
-            ) : (
-              <form onSubmit={handleUsernameLogin} className="space-y-3">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 uppercase">Username</label>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 uppercase">Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="e.g. Rohan Verma"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 uppercase">Email Address *</label>
+                <input
+                  type="email"
+                  name="email"
+                  required
+                  placeholder="rohan@example.com"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 uppercase">Mobile Number (+91) *</label>
+                <div className="flex gap-2 mt-1">
+                  <span className="bg-slate-100 border border-slate-300 rounded-lg px-2.5 py-2 text-xs font-bold text-slate-700 flex items-center">
+                    +91
+                  </span>
                   <input
-                    type="text"
+                    type="tel"
+                    name="phone"
                     required
-                    placeholder="e.g. rohan_verma or admin"
-                    value={usernameInput}
-                    onChange={(e) => setUsernameInput(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                    maxLength={10}
+                    placeholder="9876543210"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-600"
                   />
                 </div>
-                <div>
-                  <label className="text-[11px] font-bold text-slate-600 uppercase">Password</label>
-                  <input
-                    type="password"
-                    required
-                    placeholder="Enter password"
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-1 focus:ring-indigo-600"
-                  />
-                  <span className="text-[10px] text-slate-400">Admin hint: <strong>admin</strong> / <strong>123</strong></span>
-                </div>
-                <button
-                  type="submit"
-                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs transition shadow"
-                >
-                  Sign In
-                </button>
-              </form>
-            )}
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-600 uppercase">Password *</label>
+                <input
+                  type="password"
+                  name="password"
+                  required
+                  placeholder="Enter password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-1 focus:ring-indigo-600"
+                />
+                <span className="text-[10px] text-slate-400 block mt-1">
+                  Admin hint: Username <strong>admin</strong> and Password <strong>123</strong>
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl text-xs transition shadow mt-2"
+              >
+                Sign In & Continue
+              </button>
+            </form>
           </div>
         </div>
       )}
