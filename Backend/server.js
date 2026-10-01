@@ -162,8 +162,43 @@ app.post('/api/ai-recommend', (req, res) => {
   });
 });
 
+// --- Demo Users Table ---
+const USERS = [
+  { username: 'admin', password: 'password123', name: 'Admin User', role: 'admin' },
+  { username: 'barath', password: 'user123', name: 'Barath J', role: 'customer' }
+];
+
+// --- Username/Password Sign-In Route ---
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ success: false, message: 'Username and password are required' });
+  }
+
+  const user = USERS.find(
+    u => u.username.toLowerCase() === username.trim().toLowerCase() && u.password === password
+  );
+
+  if (user) {
+    return res.json({
+      success: true,
+      message: 'Login successful',
+      user: {
+        username: user.username,
+        name: user.name,
+        role: user.role
+      }
+    });
+  } else {
+    return res.status(401).json({ success: false, message: 'Invalid username or password' });
+  }
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+
 
 app.listen(5000, () => console.log('Backend running at http://localhost:5000'));

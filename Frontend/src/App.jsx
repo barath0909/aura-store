@@ -15,11 +15,13 @@ export default function App() {
   const [cart, setCart] = useState([]);
   const [user, setUser] = useState({ name: 'Rohan Verma', phone: '+91 98765 43210', role: 'customer' });
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMethod, setAuthMethod] = useState('phone'); // 'phone' | 'email'
+  const [authMethod, setAuthMethod] = useState('phone'); // 'phone' | 'credentials'
   const [phoneInput, setPhoneInput] = useState('');
   const [otpInput, setOtpInput] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [emailInput, setEmailInput] = useState('');
+  
+  // Username & Password State
+  const [usernameInput, setUsernameInput] = useState('');
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState('');
 
@@ -158,14 +160,27 @@ export default function App() {
     setOtpInput('');
   };
 
-  const handleEmailLogin = (e) => {
+  const handleUsernameLogin = (e) => {
     e.preventDefault();
-    if (emailInput === 'admin@store.in' && passwordInput === '123') {
-      setUser({ name: 'Store Administrator', email: emailInput, role: 'admin' });
+    setAuthError('');
+
+    const trimmedUser = usernameInput.trim();
+    if (!trimmedUser || !passwordInput) {
+      setAuthError('Please enter both username and password.');
+      return;
+    }
+
+    if (trimmedUser === 'admin' && passwordInput === '123') {
+      setUser({ name: 'Store Administrator', username: 'admin', role: 'admin' });
       setShowAuthModal(false);
+      setUsernameInput('');
+      setPasswordInput('');
     } else {
-      setUser({ name: emailInput.split('@')[0], email: emailInput, role: 'customer' });
+      // General customer login simulation
+      setUser({ name: trimmedUser, username: trimmedUser, role: 'customer' });
       setShowAuthModal(false);
+      setUsernameInput('');
+      setPasswordInput('');
     }
   };
 
@@ -584,10 +599,10 @@ export default function App() {
                 Mobile OTP (+91)
               </button>
               <button
-                onClick={() => { setAuthMethod('email'); setAuthError(''); }}
-                className={`flex-1 py-2 text-xs font-bold border-b-2 transition ${authMethod === 'email' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}
+                onClick={() => { setAuthMethod('credentials'); setAuthError(''); }}
+                className={`flex-1 py-2 text-xs font-bold border-b-2 transition ${authMethod === 'credentials' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-500'}`}
               >
-                Email & Password
+                Username & Password
               </button>
             </div>
 
@@ -647,15 +662,15 @@ export default function App() {
                 )}
               </div>
             ) : (
-              <form onSubmit={handleEmailLogin} className="space-y-3">
+              <form onSubmit={handleUsernameLogin} className="space-y-3">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-600 uppercase">Email Address</label>
+                  <label className="text-[11px] font-bold text-slate-600 uppercase">Username</label>
                   <input
-                    type="email"
+                    type="text"
                     required
-                    placeholder="admin@store.in"
-                    value={emailInput}
-                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="e.g. rohan_verma or admin"
+                    value={usernameInput}
+                    onChange={(e) => setUsernameInput(e.target.value)}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-1 focus:ring-indigo-600"
                   />
                 </div>
@@ -664,12 +679,12 @@ export default function App() {
                   <input
                     type="password"
                     required
-                    placeholder="123"
+                    placeholder="Enter password"
                     value={passwordInput}
                     onChange={(e) => setPasswordInput(e.target.value)}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs mt-1 focus:outline-none focus:ring-1 focus:ring-indigo-600"
                   />
-                  <span className="text-[10px] text-slate-400">Admin hint: admin@store.in / 123</span>
+                  <span className="text-[10px] text-slate-400">Admin hint: <strong>admin</strong> / <strong>123</strong></span>
                 </div>
                 <button
                   type="submit"
